@@ -1,5 +1,11 @@
 
-exec dbo.spBindsUser N'perp';
+
+begin try
+	exec dbo.spBindsUser N'perp';
+end try
+begin catch
+	print error_message()
+end catch
 
 --truncate table audit.AuditLogColumns;
 truncate table dbo.dumbo;

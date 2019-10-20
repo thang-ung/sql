@@ -64,7 +64,7 @@ begin
 		set @ins.modify('delete (/rows/r/@*[contains(sql:variable("@void"),concat("|",local-name(.),"|"))])');
 	if @dels is not null
 		set @dels.modify('delete (/rows/r/@*[contains(sql:variable("@void"),concat("|",local-name(.),"|"))])');
-select @ins, @void;
+
 	--the asynchronous solution:
 	declare @InitDlgHandle uniqueidentifier =newid();
 
