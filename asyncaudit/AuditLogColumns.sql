@@ -7,8 +7,9 @@ create table audit.AuditLogger(
 	,logName sysname default('LOG_DATA')
 	,active bit not null default(1)
 	, logger_id int identity
+	, keyExpression sysname null
 
-	,primary key(tableName, active)
+	,primary key(tableName, active, logName)
 );
 go
 
@@ -20,6 +21,7 @@ create table audit.AuditLogColumns(
 	,columnName sysname not null
 	,active bit not null default(1)
 
-	,primary key(tableName, columnName) 
+	,events tinyint not null default(0x06)	--1: insert, 2: update; 4: delete; 16: key
+	,primary key(tableName, columnName)
 );
 go

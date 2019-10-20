@@ -17,19 +17,24 @@ alter procedure audit.spAuditTxnData(
 )
 as
 begin
+	declare @verb tinyint =case
+					when @dels is null then 1
+					when @ins is null then 4
+					else 2
+					end;
 	declare @AuditLogTransactionID int
       , @ClientUserID sysname= dbo.GetConnCtxClientUserID()	--get from abstracted function
       , @AuditLogException tinyint =0;	--extended behaviour
 
 	insert into audit.LOG_Txn( tableName,audit_verb,HOST_NAME,APP_NAME, MODIFIED_BY,AFFECTED_ROWS)
 	select top(1)
-		 object_name(parent_object_id)
+		 object_name(parent_id)
 		,case when @inserts=0 then 'D' when @affectedRows=0 then 'I' else 'U' end
 		,host_name()
 		,app_name()
 		,@ClientUserID
 		,case when @inserts =0 then @affectedRows else @inserts end
-	from sys.objects where @procid = object_id;
+	from sys.triggers where @procid = object_id;
 
 	set @AuditLogTransactionID = scope_identity();
 	update T
@@ -48,17 +53,18 @@ begin
 	insert into @fields
 	select T.tbl, T.name, T.ordinal, T.active
 	from audit.fntb_updated_columns(case when @ins is null then null else @mask end
-			, @procid, default,default)T;
+			, @procid, default, @verb)T;
 
 	if(select count(1)from @fields where active=1) =0	return 0;	--exit proc
 
 	--remove n/a columns (xml attributes)
 	declare @void nvarchar(max) =cast((select '|'+cname from @fields where active=0 for xml path(''),type) as nvarchar(max)) +'|';
+
 	if @ins is not null
 		set @ins.modify('delete (/rows/r/@*[contains(sql:variable("@void"),concat("|",local-name(.),"|"))])');
 	if @dels is not null
 		set @dels.modify('delete (/rows/r/@*[contains(sql:variable("@void"),concat("|",local-name(.),"|"))])');
-
+select @ins, @void;
 	--the asynchronous solution:
 	declare @InitDlgHandle uniqueidentifier =newid();
 
@@ -73,4 +79,3 @@ begin
 
 end--spAuditTxnData
 go
-

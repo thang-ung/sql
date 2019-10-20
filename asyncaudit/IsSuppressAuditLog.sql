@@ -5,6 +5,9 @@ create function audit.IsSuppressAuditLog()
 returns bit
 as
 begin
-	return 0;
+	return case
+		when dbo.GetConnCtxClientUserID() in('sys','bulk','bcp') then 1
+		else 0
+		end;
 end--IsSuppressAuditLog
 go

@@ -35,13 +35,13 @@ begin
 		,primary key(ky,colname));
 
 	;with cteRo as(
-		select ky =isnull(ins.value('./@*[local-name(.)=sql:variable("@key")][1]', 'sysname')
-					,dels.value('./@*[local-name(.)=sql:variable("@key")][1]', 'sysname'))
+		select ky =isnull(ins.value('./@__id_expr', 'sysname')
+					,dels.value('./@__id_expr', 'sysname'))
 			, curr =dels.query('.')
 			, post =ins.query('.')
 		from @ins.nodes('/rows/r') j(ins)
-		  full join @dels.nodes('/rows/r') m(dels) on ins.value('./@*[local-name(.)=sql:variable("@key")][1]', 'sysname')
-			 = dels.value('./@*[local-name(.)=sql:variable("@key")][1]', 'sysname')
+		  full join @dels.nodes('/rows/r') m(dels) on ins.value('./@__n', 'int')
+			 = dels.value('./@__n', 'int')
 	)
 	insert into #T
 	select
@@ -54,7 +54,7 @@ begin
 		from curr.nodes('r/@*') m(dels)
 		 full join post.nodes('r/@*') j(ins) on dels.value('local-name(.)','sysname') =ins.value('local-name(.)','sysname')
 	 )UPIV
-	where @key != colname
+	where colname not in(@key, N'__n')
 	;
 
 	if @@ROWCOUNT =0

@@ -6,7 +6,7 @@ create function audit.fntb_updated_columns(
 	 @affectedMask varbinary(64)
 	,@srcproc int =null
 	,@tbl sysname =null
-	,@bevt tinyint =1	--AuditUpdateInsertDelete bitwise value
+	,@bevt tinyint =1	--Audit Insert/Update/Delete bitwise value
 )
 returns @fields table(tbl sysname
 		, name sysname
@@ -48,11 +48,12 @@ begin
 	insert into @fields
 	select tbl=object_name(col.object_id)
 		, col.name, col.column_id
-		, iif(hit.k is null, 0, 2) + 1
+		, iif(auds.events & @bevt = 0, 0, iif(hit.k is null, 0, 2) | 1)
 	from cteHit hit
 	  join sys.columns col on ceiling(col.column_id/8.0) =hit.k
 		and (hit.byt & cast(power(2, (col.column_id-1) % 8) as tinyint)) != 0
-	  join audit.AuditLogColumns(nolock) auds on auds.ColumnName =col.name and auds.TableName =@tbl
+	  join audit.AuditLogColumns(nolock) auds on auds.ColumnName =col.name
+		and auds.TableName =@tbl
 	where col.object_id =object_id(@tbl);
 
 	if @@rowcount =0

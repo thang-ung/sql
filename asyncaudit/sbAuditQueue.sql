@@ -1,13 +1,4 @@
 
-/*
-drop service svcQueueAuditTx
-drop service svcQueueAuditRx
-drop contract sbAuditLog
-drop message type svcmsgAuditID
-drop queue audit.sbAuditQueue
-go
-*/
-
 --queue/broker service
 create message type svcmsgAuditID validation=none;
 create contract sbAuditLog( svcmsgAuditID sent by initiator );
